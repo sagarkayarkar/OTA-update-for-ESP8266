@@ -6,7 +6,7 @@
 //Variables
 int i = 0;
 int statusCode;
-const char* ssid = "text";
+const char* ssid = "textok";
 const char* passphrase = "text";
 String st;
 String content;
