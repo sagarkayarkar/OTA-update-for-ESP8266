@@ -1,16 +1,43 @@
+
+//Key Features 1.OTA Updates from internet
+//             2.Set WIFI crediatials run time 
+//*************This Program Has Been Written BY Sagar Kayarkar ******
+
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
+#include <HardwareSerial.h>
+
+/* >>>>>>>>>>>>>update varaible */
+
+/*const char* ssid = "Home2";
+const char* password = "helloworld"; */
+const String FirmwareVer={"3.2"}; 
+
+//you can use differnet server or data base i am using github
+
+#define URL_fw_Version "https://raw.githubusercontent.com/sagarkayarkar/update/master/version.txt"
+#define URL_fw_Bin "https://raw.githubusercontent.com/sagarkayarkar/update/master/ota_update.ino.nodemcu.bin"
+
+HTTPClient http;
+String a;
+int OTA_FLAG = 0;
+
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+/* >>>>>>>>>>>>auth variable */
 
 //Variables
 int i = 0;
+int hotspot_disable = 1;
 int statusCode;
-const char* ssid = "textok";
+const char* ssid = "text";
 const char* passphrase = "text";
 String st;
 String content;
-
+String inputString ;
 
 //Function Decalration
 bool testWifi(void);
@@ -19,10 +46,102 @@ void setupAP(void);
 
 //Establishing Local server at port 80 whenever required
 ESP8266WebServer server(80);
+// <<<<<<<<<<<<<<<<<<<<<<
+
+
+void FirmwareUpdate()
+{
+  http.begin(URL_fw_Version,"CC AA 48 48 66 46 0E 91 53 2C 9C 7C 23 2A B1 74 4D 29 9D 33");     // check version URL
+  delay(100);
+  int httpCode = http.GET();            // get data from version file
+  delay(100);
+  String payload;
+  if (httpCode == HTTP_CODE_OK)         // if version received
+  {
+      payload = http.getString();  // save received version
+      Serial.println(payload );
+  }
+  else
+  {
+      Serial.print("error in downloading version file:");
+      Serial.println(httpCode);
+  }
+  http.end();
+  if (httpCode == HTTP_CODE_OK)         // if version received
+  {
+  if(payload.equals(FirmwareVer) )
+  {   
+     Serial.println("Device already on latest firmware version"); 
+  }
+  else
+  {
+      /* >>>>>>>>>>> you can slip this part upto left arraow for auto update */
+     Serial.println("New firmware detected");
+     Serial.println("Do you Wants to update the latest firmware");
+     Serial.println("Type Yes To Update");
+     Serial.println("Type No to Skip");
+     UP :
+     while(Serial.available()) 
+     {
+          a= Serial.readString();// read the incoming data as string
+          Serial.println(a);
+     }
+     if(a == "")
+        goto UP ;
+     if(a == "no") 
+     {
+         OTA_FLAG = 1;
+         Serial.println("Now Nodemcu will check update only after restart call");
+         return ; 
+     }
+     else if(a == "yes" )
+     {
+        Serial.println("proceed with flash");
+     }
+     else 
+     {
+        Serial.println("please enter right entry");
+        goto UP ;
+     }
+     /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< skip this part for auto update */
+     WiFiClient client;
+     ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
+     t_httpUpdate_return ret = ESPhttpUpdate.update(URL_fw_Bin,"","CC AA 48 48 66 46 0E 91 53 2C 9C 7C 23 2A B1 74 4D 29 9D 33");
+      switch (ret) {
+          case HTTP_UPDATE_FAILED:
+          Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+          break;
+
+          case HTTP_UPDATE_NO_UPDATES:
+          Serial.println("HTTP_UPDATE_NO_UPDATES");
+          break;
+
+          case HTTP_UPDATE_OK:
+          Serial.println("HTTP_UPDATE_OK");
+          break;
+       } 
+  }
+ }  
+}
+
+unsigned long previousMillis = 0;        // will store last time LED was updated
+const long interval = 30000;
+
+ void repeatedCall(){
+    unsigned long currentMillis = millis();
+    if ((currentMillis - previousMillis) >= interval) 
+    {
+        // save the last time you blinked the LED
+        previousMillis = currentMillis;
+        if(OTA_FLAG == 0)
+        {
+            FirmwareUpdate();
+        }
+    }
+ }
 
 void setup()
 {
-
   Serial.begin(115200); //Initialising if(DEBUG)Serial Monitor
   Serial.println();
   Serial.println("Disconnecting previously connected WiFi");
@@ -55,7 +174,6 @@ void setup()
   Serial.print("PASS: ");
   Serial.println(epass);
 
-
   WiFi.begin(esid.c_str(), epass.c_str());
   if (testWifi())
   {
@@ -64,39 +182,61 @@ void setup()
   }
   else
   {
-    Serial.println("Turning the HotSpot On");
-    launchWeb();
-    setupAP();// Setup HotSpot
+    Setnewnetwork();
   }
 
   Serial.println();
   Serial.println("Waiting.");
-  
+  Serial.println("version 3.2");
+}
+
+void Setnewnetwork()
+{
+  Serial.println("Turning the HotSpot On");
+  hotspot_disable =0;
+  launchWeb();
+  setupAP();// Setup HotSpot
   while ((WiFi.status() != WL_CONNECTED))
   {
-    Serial.print(".");
     delay(100);
     server.handleClient();
   }
-
 }
 void loop() {
   if ((WiFi.status() == WL_CONNECTED))
   {
 
-    for (int i = 0; i < 10; i++)
-    {
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(1000);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(1000);
-    }
+//you can use button input to change the WIFI Network
 
+ //>>>>>>>>>>>>>>>
+  if(Serial.available()) {
+  inputString= Serial.readString();
+  Serial.println(inputString);
+  if( inputString == "change" )
+  {
+    //<<<<<<<<<<<<<<
+    //can add diff check to call this function i am getting input from serial console
+    Setnewnetwork();
+  }
+ }
+ repeatedCall();    
+//>>>>>>>>>>>>>>>>>>>
+// Add Your Code Here //
+///////////////////////
+//////////////////////
+/////////////////////
+//<<<<<<<<<<<<<<<<<<<<
+ 
   }
   else
-  {
+  {       
+        if(hotspot_disable)
+        {
+        Serial.println("wifi not connected");
+        Serial.println("enter ""change \" ""to change the network");
+        Setnewnetwork();
+        }
   }
-
 }
 
 
@@ -123,7 +263,7 @@ void launchWeb()
 {
   Serial.println("");
   if (WiFi.status() == WL_CONNECTED)
-    Serial.println("WiFi connected");
+  Serial.println("WiFi connected");
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
   Serial.print("SoftAP IP: ");
@@ -157,7 +297,7 @@ void setupAP(void)
       Serial.print(WiFi.RSSI(i));
       Serial.print(")");
       Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
-      delay(10);
+      delay(10); 
     }
   }
   Serial.println("");
