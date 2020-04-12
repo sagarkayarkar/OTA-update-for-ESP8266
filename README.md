@@ -1,11 +1,14 @@
 # update
-##Main Features:- 
+
+*Suppose You have done any project using nodemcu and it is running in  client/project location  .After some days client raised some software bugs after fixing the bugs . you  have to go there for updating the firware manually .This Code will help you to release the firmware remotely, you dont need to connect the laptop/pc and usb cable to update the firmware .You just eed to add the final binary file to server , hardware wiil automatically detect the new firmware and update itself .*
+
+**Main Features:-** 
 
 1. OTA Updates through Github
 
 2.Change ESP8266 WiFi credentials without uploading code from Arduino IDE
 
-#Steps :-
+**Steps :-**
 
       1.Downlaod  [ino file](https://github.com/sagarkayarkar/update) from this Repo  .
 
@@ -43,3 +46,11 @@
       -commit changes
       make sure the file name should not be change .
       
+**Details** 
+
+**1.OTA Updates :-**
+
+ESP8266 check for new firmware from github .It will check version.txt file and if the version of running firmware and data from version.txt is differnt it will download the binary file and update the firmawre .
+
+**2.Set WIFI Cred :-**
+          We will update WiFi Credential wirelessly and store the same credentials in the EEPROM memory of the ESP8266  using a really awesome library “EEPROM.h“ .First it will Reads the WiFi Credentials from the EEPROM, and tries to connect to that; If the WiFi is not available or there are no credentials stored in the EEPROM, ESP8266 will Acts an Accespoint and creates Hotspot which will allow us to connect and modify the WiFi credential. Then it connects to the freshly configured WiFi Credentials. It will only take a couple of minutes to go through these steps
