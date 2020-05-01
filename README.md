@@ -1,4 +1,4 @@
-# update
+# Ota update for ESP8266
 
 *Suppose You have done any project using nodemcu and it is running in  client/project location  .After some days client raised some software bugs after fixing the bugs . you  have to go there for updating the firware manually .This Code will help you to release the firmware remotely, you dont need to connect the laptop/pc and usb cable to update the firmware .You just eed to add the final binary file to server , hardware wiil automatically detect the new firmware and update itself .*
 
